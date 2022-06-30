@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
+	"github.com/gobuffalo/uuid"
 	"github.com/netlify/gotrue/models"
 	"github.com/netlify/gotrue/storage"
-	"github.com/gobuffalo/uuid"
 )
 
 type adminUserParams struct {
@@ -61,7 +61,7 @@ func (a *API) adminUsers(w http.ResponseWriter, r *http.Request) error {
 		return badRequestError("Bad Pagination Parameters: %v", err)
 	}
 
-	sortParams, err := sort(r, map[string]bool{models.CreatedAt: true}, []models.SortField{models.SortField{Name: models.CreatedAt, Dir: models.Descending}})
+	sortParams, err := sort(r, map[string]bool{models.CreatedAt: true}, []models.SortField{{Name: models.CreatedAt, Dir: models.Descending}})
 	if err != nil {
 		return badRequestError("Bad Sort Parameters: %v", err)
 	}
@@ -247,4 +247,37 @@ func (a *API) adminUserDelete(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return sendJSON(w, http.StatusOK, map[string]interface{}{})
+}
+
+// adminLogoutUser logs out given user
+func (a *API) adminLogoutUser(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+	adminUser := getAdminUser(ctx)
+	instanceID := getInstanceID(ctx)
+
+	var params struct {
+		UserID uuid.UUID `json:"user_id"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&params)
+	if err != nil {
+		return badRequestError("Could not decode admin logout params: %v", err)
+	}
+
+	u, err := models.FindUserByInstanceIDAndID(a.db, instanceID, params.UserID)
+	if err != nil {
+		return unauthorizedError("Invalid user").WithInternalError(err)
+	}
+
+	err = a.db.Transaction(func(tx *storage.Connection) error {
+		if terr := models.NewAuditLogEntry(tx, instanceID, adminUser, models.LogoutUserAction, nil); terr != nil {
+			return terr
+		}
+		return models.Logout(tx, instanceID, u.ID)
+	})
+	if err != nil {
+		return internalServerError("Error logging out user").WithInternalError(err)
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	return nil
 }

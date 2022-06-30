@@ -17,6 +17,7 @@ type auditLogType string
 const (
 	LoginAction                 AuditAction = "login"
 	LogoutAction                AuditAction = "logout"
+	LogoutUserAction            AuditAction = "logout_user"
 	InviteAcceptedAction        AuditAction = "invite_accepted"
 	UserSignedUpAction          AuditAction = "user_signedup"
 	UserInvitedAction           AuditAction = "user_invited"

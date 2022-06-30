@@ -140,6 +140,8 @@ func NewAPIWithVersion(ctx context.Context, globalConfig *conf.GlobalConfigurati
 				r.Get("/", api.adminAuditLog)
 			})
 
+			r.Put("/logout", api.adminLogoutUser)
+
 			r.Route("/users", func(r *router) {
 				r.Get("/", api.adminUsers)
 				r.With(api.requireEmailProvider).Post("/", api.adminUserCreate)
