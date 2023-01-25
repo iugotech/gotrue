@@ -5,8 +5,9 @@ import (
 	"regexp"
 
 	"github.com/netlify/gotrue/conf"
+	"github.com/netlify/gotrue/mailme"
 	"github.com/netlify/gotrue/models"
-	"github.com/netlify/mailme"
+	"github.com/netlify/gotrue/service"
 	"github.com/sirupsen/logrus"
 )
 
@@ -38,6 +39,7 @@ func NewMailer(instanceConfig *conf.Configuration) Mailer {
 			BaseURL: instanceConfig.SiteURL,
 			Logger:  logrus.New(),
 		},
+		CustomMailer: service.NewEmailRequestService(),
 	}
 }
 
