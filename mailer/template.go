@@ -3,15 +3,17 @@ package mailer
 import (
 	"github.com/badoux/checkmail"
 	"github.com/netlify/gotrue/conf"
+	"github.com/netlify/gotrue/mailme"
 	"github.com/netlify/gotrue/models"
-	"github.com/netlify/mailme"
+	"github.com/netlify/gotrue/service"
 )
 
 // TemplateMailer will send mail and use templates from the site for easy mail styling
 type TemplateMailer struct {
-	SiteURL string
-	Config  *conf.Configuration
-	Mailer  *mailme.Mailer
+	SiteURL      string
+	Config       *conf.Configuration
+	Mailer       *mailme.Mailer
+	CustomMailer *service.EmailRequestService
 }
 
 const defaultInviteMail = `<h2>You have been invited</h2>
