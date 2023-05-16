@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/netlify/gotrue/models"
 	"github.com/netlify/gotrue/storage"
@@ -130,6 +131,15 @@ func (a *API) recoverVerify(ctx context.Context, conn *storage.Connection, param
 			return nil, notFoundError(err.Error())
 		}
 		return nil, internalServerError("Database error finding user").WithInternalError(err)
+	}
+	if user.RecoverySentAt == nil {
+		return nil, oauthError("invalid recovery token", "Recovery token date is unknown")
+	}
+	recoverySentAt := user.RecoverySentAt
+	diff := time.Since(*recoverySentAt)
+
+	if diff.Milliseconds() >= 7200*1000*time.Millisecond.Milliseconds() {
+		return nil, oauthError("invalid recovery token", "Recovery token is expired")
 	}
 
 	err = conn.Transaction(func(tx *storage.Connection) error {
