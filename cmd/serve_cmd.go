@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gobuffalo/uuid"
 	"github.com/netlify/gotrue/api"
 	"github.com/netlify/gotrue/conf"
 	"github.com/netlify/gotrue/storage"
-	"github.com/gobuffalo/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -35,5 +35,6 @@ func serve(globalConfig *conf.GlobalConfiguration, config *conf.Configuration) {
 
 	l := fmt.Sprintf("%v:%v", globalConfig.API.Host, globalConfig.API.Port)
 	logrus.Infof("GoTrue API started on: %s", l)
+	logrus.Infof("New Gotrue")
 	api.ListenAndServe(l)
 }
