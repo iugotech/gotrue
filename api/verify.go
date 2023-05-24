@@ -138,7 +138,7 @@ func (a *API) recoverVerify(ctx context.Context, conn *storage.Connection, param
 	recoverySentAt := user.RecoverySentAt
 	diff := time.Since(*recoverySentAt)
 
-	if diff.Milliseconds() >= 7200*1000*time.Millisecond.Milliseconds() {
+	if diff.Milliseconds() >= 3600*1000*time.Millisecond.Milliseconds() {
 		return nil, oauthError("invalid recovery token", "Recovery token is expired")
 	}
 
