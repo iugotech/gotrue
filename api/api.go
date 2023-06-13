@@ -130,7 +130,7 @@ func NewAPIWithVersion(ctx context.Context, globalConfig *conf.GlobalConfigurati
 		r.Route("/user", func(r *router) {
 			r.Use(api.requireAuthentication)
 			r.Get("/", api.UserGet)
-			r.Put("/", api.UserUpdate)
+			// r.Put("/", api.UserUpdate)
 		})
 
 		r.Route("/admin", func(r *router) {
