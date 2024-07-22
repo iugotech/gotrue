@@ -69,6 +69,15 @@ then
   DOCKER_REGISTRY="127.0.0.1:5000" # iugo dev registry
 fi
 
+
+if [ "$3" == "ecr" ]
+then
+  docker context use default
+  DOCKER_REGISTRY='319491915829.dkr.ecr.eu-central-1.amazonaws.com'
+  IMAGE_NAME="${APP_NAME}"
+  aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 319491915829.dkr.ecr.eu-central-1.amazonaws.com
+fi
+
 IMAGE_TAG="$DOCKER_REGISTRY/$IMAGE_NAME:$IMAGE_VERSION"
 
 # docker build -t ${IMAGE_TAG} -f 'Dockerfile_kafka' ./ --build-arg app_name=${1}
