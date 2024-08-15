@@ -2,8 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/netlify/gotrue/crypto"
@@ -42,23 +40,6 @@ func sendInvite(tx *storage.Connection, u *models.User, mailer mailer.Mailer, re
 }
 
 func (a *API) sendPasswordRecovery(tx *storage.Connection, u *models.User, mailer mailer.Mailer, maxFrequency time.Duration, referrerURL string) error {
-	if u.RecoverySentAt != nil && !u.RecoverySentAt.Add(maxFrequency).Before(time.Now()) {
-		totalTime := int((maxFrequency / time.Minute).Minutes())
-		remainingDuration := maxFrequency - time.Since(*u.RecoverySentAt)
-		remainingMinutes := int(remainingDuration.Minutes())
-		remainingSeconds := int(remainingDuration.Seconds() - float64(remainingMinutes*60))
-
-		jsonErr := map[string]string{
-			"en": fmt.Sprintf("You cannot request more than one password recovery link within %d minutes. You must wait %d minutes and %d seconds.", totalTime, remainingMinutes, remainingSeconds),
-			"tr": fmt.Sprintf("%d dakika içinde birden fazla şifremi unuttum linki talep edemezsiniz. Beklemeniz gereken süre: %d dakika %d saniyedir.", totalTime, remainingMinutes, remainingSeconds),
-		}
-		bytesErr, err := json.Marshal(jsonErr)
-		if err != nil {
-			return errors.Wrap(err, "Error marshalling error message")
-		}
-		return errors.New(string(bytesErr[:]))
-	}
-
 	oldToken := u.RecoveryToken
 	u.RecoveryToken = crypto.SecureToken()
 	now := time.Now()

@@ -79,6 +79,10 @@ func unprocessableEntityError(fmtString string, args ...interface{}) *HTTPError 
 	return httpError(http.StatusUnprocessableEntity, fmtString, args...)
 }
 
+func tooEarlyError(fmtString string, args ...interface{}) *HTTPError {
+	return httpError(http.StatusTooEarly, fmtString, args...)
+}
+
 // HTTPError is an error with a message and an HTTP status code.
 type HTTPError struct {
 	Code            int    `json:"code"`
