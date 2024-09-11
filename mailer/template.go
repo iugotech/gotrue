@@ -1,6 +1,9 @@
 package mailer
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/badoux/checkmail"
 	"github.com/netlify/gotrue/conf"
 	"github.com/netlify/gotrue/mailme"
@@ -57,6 +60,7 @@ func (m *TemplateMailer) InviteMail(user *models.User, referrerURL string) error
 	}
 
 	return m.Mailer.Mail(
+		"",
 		user.Email,
 		string(withDefault(m.Config.Mailer.Subjects.Invite, "You have been invited")),
 		enforceRelativeURL(m.Config.Mailer.Templates.Invite),
@@ -80,6 +84,7 @@ func (m *TemplateMailer) ConfirmationMail(user *models.User, referrerURL string)
 	}
 
 	return m.Mailer.Mail(
+		"",
 		user.Email,
 		string(withDefault(m.Config.Mailer.Subjects.Confirmation, "Confirm Your Signup")),
 		enforceRelativeURL(m.Config.Mailer.Templates.Confirmation),
@@ -104,6 +109,7 @@ func (m *TemplateMailer) EmailChangeMail(user *models.User, referrerURL string) 
 	}
 
 	return m.Mailer.Mail(
+		"",
 		user.EmailChange,
 		string(withDefault(m.Config.Mailer.Subjects.EmailChange, "Confirm Email Change")),
 		enforceRelativeURL(m.Config.Mailer.Templates.EmailChange),
@@ -114,22 +120,40 @@ func (m *TemplateMailer) EmailChangeMail(user *models.User, referrerURL string) 
 
 // RecoveryMail sends a password recovery mail
 func (m *TemplateMailer) RecoveryMail(user *models.User, referrerURL string) error {
-	url, err := getSiteURL(referrerURL, m.Config.SiteURL, m.Config.Mailer.URLPaths.Recovery, "recovery_token="+user.RecoveryToken)
+
+	// TODO: from ve site url referrer e bagli olarak secilip .Mail fonksiyonunun parametresi set edilsin.
+	from := m.Config.SMTP.AdminEmail
+	siteUrl := m.Config.SiteURL
+	templateType := "default"
+	subject := m.Config.Mailer.Subjects.Recovery
+	if strings.Contains(referrerURL, "bmmobil") {
+		from = m.Config.SMTP.BMEmail
+		siteUrl = m.Config.SiteBmURL
+		templateType = "bmmobil"
+		subject = m.Config.Mailer.Subjects.RecoveryBM
+	}
+
+	// fmt.Println("RecoveryMail", from, siteUrl, referrerURL, templateType, subject)
+
+	url, err := getSiteURL(referrerURL, siteUrl, m.Config.Mailer.URLPaths.Recovery, "recovery_token="+user.RecoveryToken)
 	if err != nil {
 		return err
 	}
 	data := map[string]interface{}{
-		"SiteURL":         m.Config.SiteURL,
+		"SiteURL":         siteUrl,
 		"ConfirmationURL": url,
 		"Email":           user.Email,
 		"Token":           user.RecoveryToken,
 		"Data":            user.UserMetaData,
 	}
 
+	// TODO: Recovery template urline template type parametre olarak eklenmeli
+	templateURL := fmt.Sprintf("%s?template=%s", m.Config.Mailer.Templates.Recovery, templateType)
 	return m.Mailer.Mail(
+		from,
 		user.Email,
-		string(withDefault(m.Config.Mailer.Subjects.Recovery, "Reset Your Password")),
-		enforceRelativeURL(m.Config.Mailer.Templates.Recovery),
+		string(withDefault(subject, "Reset Your Password")),
+		enforceRelativeURL(templateURL),
 		defaultRecoveryMail,
 		data,
 	)
@@ -138,6 +162,7 @@ func (m *TemplateMailer) RecoveryMail(user *models.User, referrerURL string) err
 // Send can be used to send one-off emails to users
 func (m TemplateMailer) Send(user *models.User, subject, body string, data map[string]interface{}) error {
 	return m.Mailer.Mail(
+		"",
 		user.Email,
 		subject,
 		"",

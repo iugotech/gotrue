@@ -26,7 +26,8 @@ func NewMailer(instanceConfig *conf.Configuration) Mailer {
 	if instanceConfig.SMTP.Host == "" {
 		return &noopMailer{}
 	}
-
+	// TODO: From map olmali. url e karsilik from maili secilmeli
+	// NOTE: config zaten var. fonksiyonlarda ordan secim yapilabilir.
 	return &TemplateMailer{
 		SiteURL: instanceConfig.SiteURL,
 		Config:  instanceConfig,

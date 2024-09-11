@@ -101,10 +101,15 @@ func (a *API) getReferrer(r *http.Request) string {
 	config := a.getConfig(ctx)
 	referrer := ""
 	if reqref := r.Referer(); reqref != "" {
+		// TODO: Siteurl coklu olarak ayarlanmalı. Request referrer coklu site urlden kontrol edilmeli.
 		base, berr := url.Parse(config.SiteURL)
+		baseBM, bmerr := url.Parse(config.SiteBmURL)
 		refurl, rerr := url.Parse(reqref)
 		// As long as the referrer came from the site, we will redirect back there
 		if berr == nil && rerr == nil && base.Hostname() == refurl.Hostname() {
+			referrer = reqref
+		}
+		if bmerr == nil && rerr == nil && baseBM.Hostname() == refurl.Hostname() {
 			referrer = reqref
 		}
 	}

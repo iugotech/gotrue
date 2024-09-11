@@ -38,7 +38,8 @@ type Mailer struct {
 
 // Mail sends a templated mail. It will try to load the template from a URL, and
 // otherwise fall back to the default
-func (m *Mailer) Mail(to, subjectTemplate, templateURL, defaultTemplate string, templateData map[string]interface{}) error {
+func (m *Mailer) Mail(from, to, subjectTemplate, templateURL, defaultTemplate string, templateData map[string]interface{}) error {
+	// TODO: from parametresi eklensin.
 	if m.FuncMap == nil {
 		m.FuncMap = map[string]interface{}{}
 	}
@@ -64,10 +65,13 @@ func (m *Mailer) Mail(to, subjectTemplate, templateURL, defaultTemplate string, 
 	if err != nil {
 		return err
 	}
-
+	if from == "" {
+		from = m.From
+	}
 	mail := gomail.NewMessage()
-	mail.SetHeader("From", m.From)
-	mail.SetHeader("To", to)
+	// mail.SetHeader("From", from)
+	mail.SetAddressHeader("From", from, from)
+	mail.SetAddressHeader("To", to, to)
 	mail.SetHeader("Subject", subject.String())
 	mail.SetBody("text/html", body)
 

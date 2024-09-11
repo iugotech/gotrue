@@ -73,6 +73,7 @@ type EmailContentConfiguration struct {
 	Invite       string `json:"invite"`
 	Confirmation string `json:"confirmation"`
 	Recovery     string `json:"recovery"`
+	RecoveryBM   string `json:"recovery_bm"`
 	EmailChange  string `json:"email_change" split_words:"true"`
 }
 
@@ -94,6 +95,8 @@ type SMTPConfiguration struct {
 	User         string        `json:"user"`
 	Pass         string        `json:"pass,omitempty"`
 	AdminEmail   string        `json:"admin_email" split_words:"true"`
+	IUGOEmail    string        `json:"iugo_email" split_words:"true"`
+	BMEmail      string        `json:"bm_email" split_words:"true"`
 }
 
 type MailerConfiguration struct {
@@ -106,6 +109,7 @@ type MailerConfiguration struct {
 // Configuration holds all the per-instance configuration.
 type Configuration struct {
 	SiteURL       string                `json:"site_url" split_words:"true" required:"true"`
+	SiteBmURL     string                `json:"site_bm_url" split_words:"true"`
 	JWT           JWTConfiguration      `json:"jwt"`
 	SMTP          SMTPConfiguration     `json:"smtp"`
 	Mailer        MailerConfiguration   `json:"mailer"`
