@@ -52,24 +52,44 @@ func (a *API) ResourceOwnerPasswordGrant(ctx context.Context, w http.ResponseWri
 	password := r.FormValue("password")
 	cookie := r.Header.Get(useCookieHeader)
 
+	adminUser := getAdminUser(ctx)
+
 	aud := a.requestAud(ctx, r)
 	instanceID := getInstanceID(ctx)
 	config := a.getConfig(ctx)
 
-	user, err := models.FindUserByEmailAndAudience(a.db, instanceID, username, aud)
-	if err != nil {
-		if models.IsNotFoundError(err) {
-			return oauthError("invalid_grant", "No user found with that email, or password invalid.")
+	// fmt.Println("")
+	// fmt.Printf("AdminUser: %+v", adminUser)
+	// fmt.Println("")
+
+	var user *models.User
+	var err error
+	if adminUser == nil {
+
+		user, err = models.FindUserByEmailAndAudience(a.db, instanceID, username, aud)
+		if err != nil {
+			if models.IsNotFoundError(err) {
+				return oauthError("invalid_grant", "No user found with that email, or password invalid.")
+			}
+			return internalServerError("Database error finding user").WithInternalError(err)
 		}
-		return internalServerError("Database error finding user").WithInternalError(err)
+	} else {
+		requestedUser := getRequestedUser(ctx)
+		// fmt.Println("")
+		// fmt.Printf("Requested User: %+v", requestedUser)
+		// fmt.Println("")
+
+		user = requestedUser
 	}
 
 	if !user.IsConfirmed() {
 		return oauthError("invalid_grant", "Email not confirmed")
 	}
 
-	if !user.Authenticate(password) {
-		return oauthError("invalid_grant", "No user found with that email, or password invalid.")
+	if adminUser == nil {
+		if !user.Authenticate(password) {
+			return oauthError("invalid_grant", "No user found with that email, or password invalid.")
+		}
 	}
 
 	var token *AccessTokenResponse

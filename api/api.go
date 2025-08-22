@@ -141,6 +141,7 @@ func NewAPIWithVersion(ctx context.Context, globalConfig *conf.GlobalConfigurati
 			})
 
 			r.Put("/logout", api.adminLogoutUser)
+			r.Post("/login", api.adminLoginUser)
 
 			r.Route("/users", func(r *router) {
 				r.Get("/", api.adminUsers)

@@ -281,3 +281,27 @@ func (a *API) adminLogoutUser(w http.ResponseWriter, r *http.Request) error {
 	w.WriteHeader(http.StatusNoContent)
 	return nil
 }
+
+// adminLoginUser logs in given user
+func (a *API) adminLoginUser(w http.ResponseWriter, r *http.Request) error {
+
+	ctx := r.Context()
+	instanceID := getInstanceID(ctx)
+
+	var params struct {
+		UserID uuid.UUID `json:"user_id"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&params)
+	if err != nil {
+		return badRequestError("Could not decode admin logout params: %v", err)
+	}
+
+	user, err := models.FindUserByInstanceIDAndID(a.db, instanceID, params.UserID)
+	if err != nil {
+		return unauthorizedError("Invalid user").WithInternalError(err)
+	}
+
+	ctx = context.WithValue(ctx, requestedUserKey, user)
+
+	return a.ResourceOwnerPasswordGrant(ctx, w, r)
+}

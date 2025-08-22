@@ -22,6 +22,8 @@ fi
 APP_NAME=$(echo $1 | sed 's/\([a-z0-9]\)\([A-Z]\)/\1-\2/g' | tr '[:upper:]' '[:lower:]'})
 IMAGE_NAME="iugo/${APP_NAME}"
 IMAGE_VERSION='0.0.1'
+DEPS_COMMAND="make deps"
+BUILD_COMMAND="CGO_ENABLED=0 GOOS=linux GOARCH=amd64 make build"
 
 if [ "$2" != "" ]
 then
@@ -72,7 +74,7 @@ fi
 
 if [ "$3" == "ecr" ]
 then
-  docker context use default
+  docker context use aws_drv_1
   DOCKER_REGISTRY='319491915829.dkr.ecr.eu-central-1.amazonaws.com'
   IMAGE_NAME="${APP_NAME}"
   aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 319491915829.dkr.ecr.eu-central-1.amazonaws.com
@@ -83,8 +85,12 @@ IMAGE_TAG="$DOCKER_REGISTRY/$IMAGE_NAME:$IMAGE_VERSION"
 # docker build -t ${IMAGE_TAG} -f 'Dockerfile_kafka' ./ --build-arg app_name=${1}
 
 # docker build --no-cache -t ${IMAGE_TAG} ./ --build-arg app_name=${1}
+echo ${DEPS_COMMAND}
+eval ${DEPS_COMMAND}
+echo ${BUILD_COMMAND}
+eval ${BUILD_COMMAND}
 
-docker build -t ${IMAGE_TAG} ./
+docker build -t ${IMAGE_TAG} -f 'Dockerfile_local' ./
 
 docker push ${IMAGE_TAG}
 
