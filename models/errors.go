@@ -33,3 +33,10 @@ type InstanceNotFoundError struct{}
 func (e InstanceNotFoundError) Error() string {
 	return "Instance not found"
 }
+
+// DuplicatePasswordError represents when a password is duplicate in user password history when updating password.
+type DuplicatePasswordError struct{}
+
+func (e DuplicatePasswordError) Error() string {
+	return "Duplicate password"
+}

@@ -112,7 +112,7 @@ func (a *API) adminUserUpdate(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		if params.Password != "" {
-			if terr := user.UpdatePassword(tx, params.Password); terr != nil {
+			if terr := user.UpdatePassword(tx, params.Password, a.config.PasswordPolicy.PasswordHistoryCount); terr != nil { // Can admin user bypass the password policy?
 				return terr
 			}
 		}
@@ -145,7 +145,12 @@ func (a *API) adminUserUpdate(w http.ResponseWriter, r *http.Request) error {
 	})
 
 	if err != nil {
-		return internalServerError("Error updating user").WithInternalError(err)
+		switch err.(type) {
+		case models.DuplicatePasswordError:
+			return badRequestError("%s", err.Error())
+		default:
+			return internalServerError("Error updating user").WithInternalError(err)
+		}
 	}
 
 	return sendJSON(w, http.StatusOK, user)

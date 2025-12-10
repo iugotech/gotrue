@@ -50,6 +50,13 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
 
+type UserPasswordHistory struct {
+	ID           int       `json:"-" db:"id"`
+	UserID       uuid.UUID `json:"-" db:"user_id"`
+	PasswordHash string    `json:"-" db:"password_hash"`
+	CreatedAt    time.Time `json:"created_at" db:"created_at"`
+}
+
 // NewUser initializes a new user from an email, password and user data.
 func NewUser(instanceID uuid.UUID, email, password, aud string, userData map[string]interface{}) (*User, error) {
 	id, err := uuid.NewV4()
@@ -194,12 +201,62 @@ func hashPassword(password string) (string, error) {
 	return string(pw), nil
 }
 
-func (u *User) UpdatePassword(tx *storage.Connection, password string) error {
+func isPasswordDuplicate(newPassword string, hashedPassword []byte) (bool, error) {
+	err := bcrypt.CompareHashAndPassword(hashedPassword, []byte(newPassword))
+	return err == nil, nil
+}
+
+func (u *User) AddPasswordHistory(tx *storage.Connection, hashedPassword string) error {
+	return tx.Create(&UserPasswordHistory{UserID: u.ID, PasswordHash: hashedPassword})
+}
+
+func (u *User) GetPasswordHistory(tx *storage.Connection, duplicateLimit int) ([]UserPasswordHistory, error) {
+	passwordHistories := []UserPasswordHistory{}
+
+	err := tx.Q().Where("user_id = ?", u.ID).Order("created_at DESC").Limit(duplicateLimit).All(&passwordHistories)
+	if err != nil {
+		return nil, err
+	}
+
+	return passwordHistories, nil
+}
+
+func (u *User) UpdatePassword(tx *storage.Connection, password string, duplicateLimit int) error {
 	pw, err := hashPassword(password)
 	if err != nil {
 		return err
 	}
+
+	//check if the new password is the same as the previous passwords
+	if duplicateLimit > 0 {
+		var passwordHistories []UserPasswordHistory
+		if passwordHistories, err = u.GetPasswordHistory(tx, duplicateLimit); err != nil {
+			return err
+		}
+
+		for _, passwordHistory := range passwordHistories {
+			var duplicate bool
+			if duplicate, err = isPasswordDuplicate(password, []byte(passwordHistory.PasswordHash)); err != nil {
+				return err
+			} else if duplicate {
+				return DuplicatePasswordError{}
+			}
+		}
+
+		//delete the redundant password history
+		if len(passwordHistories) == duplicateLimit {
+			if err = tx.Destroy(&passwordHistories[len(passwordHistories)-1]); err != nil {
+				return err
+			}
+		}
+
+		if err = u.AddPasswordHistory(tx, pw); err != nil {
+			return err
+		}
+	}
+
 	u.EncryptedPassword = pw
+
 	return tx.UpdateOnly(u, "encrypted_password")
 }
 
