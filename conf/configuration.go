@@ -46,6 +46,8 @@ type JWTConfiguration struct {
 	Secret           string `json:"secret" required:"true"`
 	Exp              int    `json:"exp"`
 	Aud              string `json:"aud"`
+	Issuer           string `json:"issuer"`
+	Audience         string `json:"audience"`
 	AdminGroupName   string `json:"admin_group_name" split_words:"true"`
 	DefaultGroupName string `json:"default_group_name" split_words:"true"`
 }

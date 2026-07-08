@@ -6,7 +6,9 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
+	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/gobuffalo/uuid"
 	"github.com/netlify/gotrue/conf"
 	"github.com/netlify/gotrue/models"
@@ -72,4 +74,26 @@ func (ts *TokenTestSuite) TestRateLimitToken() {
 	w = httptest.NewRecorder()
 	ts.API.handler.ServeHTTP(w, req)
 	assert.Equal(ts.T(), http.StatusBadRequest, w.Code)
+}
+
+func TestGenerateAccessTokenIncludesIssuerAndAudience(t *testing.T) {
+	const issuer = "iugo-web-auth"
+	const audience = "iugo-platform"
+	const secret = "test-secret"
+
+	instanceID := uuid.Must(uuid.NewV4())
+	user, err := models.NewUser(instanceID, "claims-test@example.com", "password", "", nil)
+	require.NoError(t, err)
+
+	tokenString, err := generateAccessToken(user, time.Hour, secret, issuer, audience)
+	require.NoError(t, err)
+
+	claims := &GoTrueClaims{}
+	_, err = jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(secret), nil
+	})
+	require.NoError(t, err)
+	assert.Equal(t, issuer, claims.Issuer)
+	assert.Equal(t, audience, claims.Audience)
+	assert.Equal(t, user.ID.String(), claims.Subject)
 }
