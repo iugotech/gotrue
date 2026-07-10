@@ -97,8 +97,13 @@ func (a *API) signupVerify(ctx context.Context, conn *storage.Connection, params
 				if params.Password == "" {
 					return unprocessableEntityError("Invited users must specify a password")
 				}
-				if terr = user.UpdatePassword(tx, params.Password); terr != nil {
-					return internalServerError("Error storing password").WithInternalError(terr)
+				if terr = user.UpdatePassword(tx, params.Password, a.config.PasswordPolicy.PasswordHistoryCount); terr != nil {
+					switch terr.(type) {
+					case models.DuplicatePasswordError:
+						return badRequestError("%s", terr.Error())
+					default:
+						return internalServerError("Error storing password").WithInternalError(terr)
+					}
 				}
 			}
 		}

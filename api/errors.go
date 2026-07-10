@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 	"runtime/debug"
+
+	"github.com/netlify/gotrue/models"
 )
 
 var oauthErrorMap = map[int]string{
@@ -178,6 +180,12 @@ func handleError(err error, w http.ResponseWriter, r *http.Request) {
 		}
 	case ErrorCause:
 		handleError(e.Cause(), w, r)
+	case models.DuplicatePasswordError:
+		log.WithError(e).Info(e.Error())
+		httpErr := badRequestError("%s", e.Error())
+		if jsonErr := sendJSON(w, http.StatusBadRequest, httpErr); jsonErr != nil {
+			handleError(jsonErr, w, r)
+		}
 	default:
 		log.WithError(e).Errorf("Unhandled server error: %s", e.Error())
 		// hide real error details from response to prevent info leaks

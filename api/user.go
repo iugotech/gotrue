@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gobuffalo/uuid"
 	"github.com/netlify/gotrue/models"
 	"github.com/netlify/gotrue/storage"
-	"github.com/gobuffalo/uuid"
 )
 
 // UserUpdateParams parameters for updating a user
@@ -80,8 +80,13 @@ func (a *API) UserUpdate(w http.ResponseWriter, r *http.Request) error {
 	err = a.db.Transaction(func(tx *storage.Connection) error {
 		var terr error
 		if params.Password != "" {
-			if terr = user.UpdatePassword(tx, params.Password); terr != nil {
-				return internalServerError("Error during password storage").WithInternalError(terr)
+			if terr = user.UpdatePassword(tx, params.Password, a.config.PasswordPolicy.PasswordHistoryCount); terr != nil {
+				switch terr.(type) {
+				case models.DuplicatePasswordError:
+					return badRequestError("%s", terr.Error())
+				default:
+					return internalServerError("Error during password storage").WithInternalError(terr)
+				}
 			}
 		}
 

@@ -128,4 +128,15 @@ CREATE TABLE `users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
+DROP TABLE IF EXISTS `user_password_histories`;
+
+CREATE TABLE `user_password_histories` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` varchar(255) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `user_password_histories_user_id_created_at_idx` (`user_id`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- Dump completed on 2018-01-19 17:00:48

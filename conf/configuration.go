@@ -52,6 +52,10 @@ type JWTConfiguration struct {
 	DefaultGroupName string `json:"default_group_name" split_words:"true"`
 }
 
+type PasswordPolicy struct {
+	PasswordHistoryCount int `json:"password_history_count" envconfig:"GOTRUE_PASSWORD_HISTORY_COUNT"` // number of passwords to store in the database
+}
+
 // GlobalConfiguration holds all the configuration that applies to all instances.
 type GlobalConfiguration struct {
 	API struct {
@@ -67,7 +71,8 @@ type GlobalConfiguration struct {
 	MultiInstanceMode bool
 	Tracing           TracingConfig
 	SMTP              SMTPConfiguration
-	RateLimitHeader   string `split_words:"true"`
+	RateLimitHeader   string         `split_words:"true"`
+	PasswordPolicy    PasswordPolicy `json:"password_policy"`
 }
 
 // EmailContentConfiguration holds the configuration for emails, both subjects and template URLs.
@@ -175,6 +180,7 @@ func LoadGlobal(filename string) (*GlobalConfiguration, error) {
 	if config.SMTP.MaxFrequency == 0 {
 		config.SMTP.MaxFrequency = 15 * time.Minute
 	}
+
 	return config, nil
 }
 
